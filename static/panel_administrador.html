@@ -1,1 +1,197 @@
-<html><body><h1>Panel Administrador</h1></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel del Administrador</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            font-size: 28px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .Alvarez {
+            background-color: #f4a261;
+        }
+        .Duggi {
+            background-color: #6fb1fc;
+        }
+        .Ingenieros {
+            background-color: #d7b5f9;
+        }
+        #formulario {
+            margin-top: 40px;
+            max-width: 500px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        #formulario label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        #formulario input,
+        #formulario select,
+        #formulario button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button.eliminar {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button.eliminar:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <h1>Panel del Administrador</h1>
+
+    <h2>📂 Ver todas las tareas</h2>
+    <button onclick="verTareas()">Mostrar</button>
+    <div id="tareas"></div>
+
+    <h2>➕ Crear nueva tarea</h2>
+    <div id="formulario">
+        <form onsubmit="crearTarea(event)">
+            <label>Fecha:
+                <input type="date" id="fecha" required>
+            </label>
+            <label>Centro:
+                <select id="centro" required onchange="actualizarHabitaculos()">
+                    <option value="">Seleccione...</option>
+                    <option value="Álvarez de Lugo">Álvarez de Lugo</option>
+                    <option value="Duggi">Duggi</option>
+                    <option value="Ingenieros">Ingenieros</option>
+                </select>
+            </label>
+            <label>Habitáculo (puede seleccionar más de uno):
+                <select id="habitaculo" multiple required size="6"></select>
+            </label>
+            <label>Responsable:
+                <select id="responsable" required>
+                    <option value="">Seleccione...</option>
+                    <option>Candelaria</option>
+                    <option>Natalia</option>
+                    <option>Soledad</option>
+                </select>
+            </label>
+            <label>Estado:
+                <select id="estado">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Completada">Completada</option>
+                </select>
+            </label>
+            <label>Comentarios:
+                <input type="text" id="comentarios">
+            </label>
+            <button type="submit">Crear</button>
+        </form>
+    </div>
+
+    <script>
+        const HABITACULOS = {
+            "Álvarez de Lugo": ["Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6", "Aula 7", "Aula 8", "Despacho Jorge", "Recepción", "Despacho Edu y Naza", "Contabilidad", "Despacho Ñeña y Espi", "Torre", "Despacho Pilar y Begoña", "Cocina", "Baños", "Almacenes", "Pasillos", "Sala limpieza", "Papeleras", "Escaleras/Entrada", "Salida Emergencia", "Despacho Jorge"],
+            "Duggi": ["Aula 1", "Aula 2", "Aula 3", "Despacho", "Recepción", "Baño Disc.", "Baños", "Pasillo"],
+            "Ingenieros": ["Entrada", "Aula 1 (salón peluquería)", "Aula 2 (aula de informática)", "Despacho 1", "Despacho 2 (pequeño)", "Aula 3 (aula de teoría peluquería)", "Aula 4 (salón estético)", "Aula 5 (aula de teoría estética)", "Aula 6 (almacén)"]
+        };
+
+        function actualizarHabitaculos() {
+            const centro = document.getElementById("centro").value;
+            const habitaculoSelect = document.getElementById("habitaculo");
+            habitaculoSelect.innerHTML = "";
+            if (HABITACULOS[centro]) {
+                HABITACULOS[centro].forEach(h => {
+                    const opt = document.createElement("option");
+                    opt.value = opt.textContent = h;
+                    habitaculoSelect.appendChild(opt);
+                });
+            }
+        }
+
+        async function verTareas() {
+            const res = await fetch("http://localhost:8000/tareas");
+            const datos = await res.json();
+            const tabla = `
+                <table>
+                    <tr>
+                        <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
+                        <th>Responsable</th><th>Estado</th><th>Comentarios</th><th>Acciones</th>
+                    </tr>
+                    ${datos.map(t => `
+                        <tr class="${t.centro.includes('Álvarez') ? 'Alvarez' : t.centro}">
+                            <td>${t.fecha}</td><td>${t.centro}</td><td>${t.habitaculo}</td>
+                            <td>${t.responsable}</td><td>${t.estado}</td><td>${t.comentarios}</td>
+                            <td><button class="eliminar" onclick="eliminarTarea(${t.id})">Eliminar</button></td>
+                        </tr>`).join("")}
+                </table>`;
+            document.getElementById("tareas").innerHTML = tabla;
+        }
+
+        async function crearTarea(event) {
+            event.preventDefault();
+            const fecha = document.getElementById("fecha").value;
+            const centro = document.getElementById("centro").value;
+            const habitaculos = Array.from(document.getElementById("habitaculo").selectedOptions).map(opt => opt.value);
+            const responsable = document.getElementById("responsable").value;
+            const estado = document.getElementById("estado").value;
+            const comentarios = document.getElementById("comentarios").value;
+
+            for (const habitaculo of habitaculos) {
+                const nuevaTarea = { fecha, centro, habitaculo, responsable, estado, comentarios };
+
+                const res = await fetch("http://localhost:8000/tareas", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(nuevaTarea)
+                });
+
+                if (!res.ok) {
+                    alert("❌ Error al crear una de las tareas.");
+                    return;
+                }
+            }
+
+            alert("✅ Tareas creadas correctamente.");
+            verTareas();
+            event.target.reset();
+        }
+
+        async function eliminarTarea(id) {
+            if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) return;
+            const res = await fetch(`http://localhost:8000/tareas/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                alert("🗑️ Tarea eliminada.");
+                verTareas();
+            } else {
+                alert("❌ Error al eliminar la tarea.");
+            }
+        }
+    </script>
+</body>
+</html>
