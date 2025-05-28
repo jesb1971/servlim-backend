@@ -116,81 +116,81 @@
 
     <script>
         const HABITACULOS = {
-        "Álvarez de Lugo": ["Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6", "Aula 7", "Aula 8", "Despacho Jorge", "Recepción", "Despacho Edu y Naza", "Contabilidad", "Despacho Ñeña y Espi", "Torre", "Despacho Pilar y Begoña", "Cocina", "Baños", "Almacenes", "Pasillos", "Sala limpieza", "Papeleras", "Escaleras/Entrada", "Salida Emergencia", "Despacho Jorge"],
-        "Duggi": ["Aula 1", "Aula 2", "Aula 3", "Despacho", "Recepción", "Baño Disc.", "Baños", "Pasillo"],
-        "Ingenieros": ["Entrada", "Aula 1 (salón peluquería)", "Aula 2 (aula de informática)", "Despacho 1", "Despacho 2 (pequeño)", "Aula 3 (aula de teoría peluquería)", "Aula 4 (salón estético)", "Aula 5 (aula de teoría estética)", "Aula 6 (almacén)"]
-    };
+            "Álvarez de Lugo": ["Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6", "Aula 7", "Aula 8", "Despacho Jorge", "Recepción", "Despacho Edu y Naza", "Contabilidad", "Despacho Ñeña y Espi", "Torre", "Despacho Pilar y Begoña", "Cocina", "Baños", "Almacenes", "Pasillos", "Sala limpieza", "Papeleras", "Escaleras/Entrada", "Salida Emergencia", "Despacho Jorge"],
+            "Duggi": ["Aula 1", "Aula 2", "Aula 3", "Despacho", "Recepción", "Baño Disc.", "Baños", "Pasillo"],
+            "Ingenieros": ["Entrada", "Aula 1 (salón peluquería)", "Aula 2 (aula de informática)", "Despacho 1", "Despacho 2 (pequeño)", "Aula 3 (aula de teoría peluquería)", "Aula 4 (salón estético)", "Aula 5 (aula de teoría estética)", "Aula 6 (almacén)"]
+        };
 
-    function actualizarHabitaculos() {
-        const centro = document.getElementById("centro").value;
-        const habitaculoSelect = document.getElementById("habitaculo");
-        habitaculoSelect.innerHTML = "";
-        if (HABITACULOS[centro]) {
-            HABITACULOS[centro].forEach(h => {
-                const opt = document.createElement("option");
-                opt.value = opt.textContent = h;
-                habitaculoSelect.appendChild(opt);
-            });
-        }
-    }
-
-    async function verTareas() {
-        const res = await fetch("/tareas");
-        const datos = await res.json();
-        const tabla = `
-            <table>
-                <tr>
-                    <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
-                    <th>Responsable</th><th>Estado</th><th>Comentarios</th><th>Acciones</th>
-                </tr>
-                ${datos.map(t => `
-                    <tr class="${t.centro.includes('Álvarez') ? 'Alvarez' : t.centro}">
-                        <td>${t.fecha}</td><td>${t.centro}</td><td>${t.habitaculo}</td>
-                        <td>${t.responsable}</td><td>${t.estado}</td><td>${t.comentarios}</td>
-                        <td><button class="eliminar" onclick="eliminarTarea(${t.id})">Eliminar</button></td>
-                    </tr>`).join("")}
-            </table>`;
-        document.getElementById("tareas").innerHTML = tabla;
-    }
-
-    async function crearTarea(event) {
-        event.preventDefault();
-        const fecha = document.getElementById("fecha").value;
-        const centro = document.getElementById("centro").value;
-        const habitaculos = Array.from(document.getElementById("habitaculo").selectedOptions).map(opt => opt.value);
-        const responsable = document.getElementById("responsable").value;
-        const estado = document.getElementById("estado").value;
-        const comentarios = document.getElementById("comentarios").value;
-
-        for (const habitaculo of habitaculos) {
-            const nuevaTarea = { fecha, centro, habitaculo, responsable, estado, comentarios };
-            const res = await fetch("/tareas", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(nuevaTarea)
-            });
-
-            if (!res.ok) {
-                alert("❌ Error al crear una de las tareas.");
-                return;
+        function actualizarHabitaculos() {
+            const centro = document.getElementById("centro").value;
+            const habitaculoSelect = document.getElementById("habitaculo");
+            habitaculoSelect.innerHTML = "";
+            if (HABITACULOS[centro]) {
+                HABITACULOS[centro].forEach(h => {
+                    const opt = document.createElement("option");
+                    opt.value = opt.textContent = h;
+                    habitaculoSelect.appendChild(opt);
+                });
             }
         }
 
-        alert("✅ Tareas creadas correctamente.");
-        verTareas();
-        event.target.reset();
-    }
-
-    async function eliminarTarea(id) {
-        if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) return;
-        const res = await fetch(`/tareas/${id}`, { method: "DELETE" });
-        if (res.ok) {
-            alert("🗑️ Tarea eliminada.");
-            verTareas();
-        } else {
-            alert("❌ Error al eliminar la tarea.");
+        async function verTareas() {
+            const res = await fetch("/tareas");
+            const datos = await res.json();
+            const tabla = `
+                <table>
+                    <tr>
+                        <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
+                        <th>Responsable</th><th>Estado</th><th>Comentarios</th><th>Acciones</th>
+                    </tr>
+                    ${datos.map(t => `
+                        <tr class="${t.centro.includes('Álvarez') ? 'Alvarez' : t.centro}">
+                            <td>${t.fecha}</td><td>${t.centro}</td><td>${t.habitaculo}</td>
+                            <td>${t.responsable}</td><td>${t.estado}</td><td>${t.comentarios}</td>
+                            <td><button class="eliminar" onclick="eliminarTarea(${t.id})">Eliminar</button></td>
+                        </tr>`).join("")}
+                </table>`;
+            document.getElementById("tareas").innerHTML = tabla;
         }
-    }
+
+        async function crearTarea(event) {
+            event.preventDefault();
+            const fecha = document.getElementById("fecha").value;
+            const centro = document.getElementById("centro").value;
+            const habitaculos = Array.from(document.getElementById("habitaculo").selectedOptions).map(opt => opt.value);
+            const responsable = document.getElementById("responsable").value;
+            const estado = document.getElementById("estado").value;
+            const comentarios = document.getElementById("comentarios").value;
+
+            for (const habitaculo of habitaculos) {
+                const nuevaTarea = { fecha, centro, habitaculo, responsable, estado, comentarios };
+                const res = await fetch("/tareas", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(nuevaTarea)
+                });
+
+                if (!res.ok) {
+                    alert("❌ Error al crear una de las tareas.");
+                    return;
+                }
+            }
+
+            alert("✅ Tareas creadas correctamente.");
+            verTareas();
+            event.target.reset();
+        }
+
+        async function eliminarTarea(id) {
+            if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) return;
+            const res = await fetch(`/tareas/${id}`, { method: "DELETE" });
+            if (res.ok) {
+                alert("🗑️ Tarea eliminada.");
+                verTareas();
+            } else {
+                alert("❌ Error al eliminar la tarea.");
+            }
+        }
     </script>
 </body>
 </html>
