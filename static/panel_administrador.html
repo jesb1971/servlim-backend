@@ -67,13 +67,25 @@
         button.eliminar:hover {
             background-color: #c0392b;
         }
+        #mostrarBtn {
+            padding: 6px 12px;
+            margin-bottom: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #mostrarBtn:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
     <h1>Panel del Administrador</h1>
 
     <h2>📂 Ver todas las tareas</h2>
-    <button onclick="verTareas()">Mostrar</button>
+    <button id="mostrarBtn" onclick="verTareas()">Mostrar</button>
     <div id="tareas"></div>
 
     <h2>➕ Crear nueva tarea</h2>
