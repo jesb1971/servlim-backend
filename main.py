@@ -42,6 +42,21 @@ def admin():
         return html_path.read_text(encoding="utf-8")
     raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
 
+@app.get("/operario", response_class=HTMLResponse)
+def operario():
+    html_path = Path("static/panel_operario.html")
+    if html_path.exists():
+        return html_path.read_text(encoding="utf-8")
+    raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
+
+@app.get("/informes_panel", response_class=HTMLResponse)
+def informes_panel():
+    html_path = Path("static/panel_informes.html")
+    if html_path.exists():
+        return html_path.read_text(encoding="utf-8")
+    raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
+
+
 @app.get("/tareas")
 def listar_tareas():
     df = pd.read_excel(ARCHIVO)
