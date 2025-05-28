@@ -1,9 +1,11 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from pathlib import Path
 import pandas as pd
 from pandas import ExcelWriter
 
@@ -17,6 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Montar archivos estáticos
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 ARCHIVO = "TareasLimpieza_ConTabla.xlsx"
 
 class TareaBase(BaseModel):
@@ -29,6 +34,13 @@ class TareaBase(BaseModel):
 
 class Tarea(TareaBase):
     id: int
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin():
+    html_path = Path("static/panel_administrador.html")
+    if html_path.exists():
+        return html_path.read_text(encoding="utf-8")
+    raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
 
 @app.get("/tareas")
 def listar_tareas():
