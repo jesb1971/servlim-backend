@@ -95,7 +95,7 @@
                 return;
             }
 
-            let url = `http://localhost:8000/informes?desde=${desde}&hasta=${hasta}`;
+            let url = `/informes?desde=${desde}&hasta=${hasta}`;
             if (responsable) url += `&responsable=${responsable}`;
             if (estado) url += `&estado=${estado}`;
 
@@ -141,7 +141,7 @@
                 return;
             }
 
-            let url = `http://localhost:8000/exportar_excel_filtrado?desde=${desde}&hasta=${hasta}`;
+            let url = `/exportar_excel_filtrado?desde=${desde}&hasta=${hasta}`;
             if (responsable) url += `&responsable=${responsable}`;
             if (estado) url += `&estado=${estado}`;
 
