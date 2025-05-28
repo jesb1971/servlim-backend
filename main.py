@@ -126,9 +126,9 @@ def actualizar_tarea(id: int, tarea: Tarea):
 
 # Diccionario con las claves de los operarios
 CLAVES_OPERARIOS = {
-    "Candelaria": "Candelaria123",
-    "Natalia": "Natalia456",
-    "Soledad": "Soledad789"
+    "Candelaria": "43616041",
+    "Natalia": "54041797",
+    "Soledad": "45455315"
 }
 
 class Credenciales(BaseModel):
