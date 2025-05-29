@@ -1,15 +1,11 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from database import inicializar_db
-inicializar_db()
-
-from fastapi.responses import FileResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from pathlib import Path
 import sqlite3
+import os
 
 from database import crear_conexion
 
@@ -23,10 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Montar archivos estáticos
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
 class TareaBase(BaseModel):
     fecha: str
     centro: str
@@ -38,115 +30,118 @@ class TareaBase(BaseModel):
 class Tarea(TareaBase):
     id: int
 
+@app.get("/admin")
+def admin_panel():
+    return FileResponse("static/panel_admin.html")
 
-@app.get("/admin", response_class=HTMLResponse)
-def admin():
-    html_path = Path("static/panel_administrador.html")
-    if html_path.exists():
-        return html_path.read_text(encoding="utf-8")
-    raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
+@app.get("/operario")
+def operario_panel():
+    return FileResponse("static/panel_operario.html")
 
-@app.get("/operario", response_class=HTMLResponse)
-def operario():
-    html_path = Path("static/panel_operario.html")
-    if html_path.exists():
-        return html_path.read_text(encoding="utf-8")
-    raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
-
-@app.get("/informes_panel", response_class=HTMLResponse)
+@app.get("/informes_panel")
 def informes_panel():
-    html_path = Path("static/panel_informes.html")
-    if html_path.exists():
-        return html_path.read_text(encoding="utf-8")
-    raise HTTPException(status_code=404, detail="Archivo HTML no encontrado")
-
+    return FileResponse("static/panel_informes.html")
 
 @app.get("/tareas")
 def listar_tareas():
     conn = crear_conexion()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM tareas")
+    filas = cursor.fetchall()
     columnas = [col[0] for col in cursor.description]
-    tareas = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
     conn.close()
-    return tareas
-
+    return [dict(zip(columnas, fila)) for fila in filas]
 
 @app.post("/tareas")
 def crear_tarea(tarea: TareaBase):
-    try:
-        fecha_tarea = datetime.strptime(tarea.fecha, "%Y-%m-%d").date()
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Formato de fecha inválido. Usa AAAA-MM-DD.")
-    if fecha_tarea < datetime.now().date():
-        raise HTTPException(status_code=400, detail="No se puede crear una tarea con fecha anterior a hoy.")
-
     conn = crear_conexion()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO tareas (fecha, centro, habitaculo, responsable, estado, comentarios)
-        VALUES (?, ?, ?, ?, ?, ?)""",
-        (tarea.fecha, tarea.centro, tarea.habitaculo, tarea.responsable, tarea.estado, tarea.comentarios or "")
-    )
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (tarea.fecha, tarea.centro, tarea.habitaculo, tarea.responsable, tarea.estado, tarea.comentarios))
     conn.commit()
-    nuevo_id = cursor.lastrowid
     conn.close()
+    return {"mensaje": "Tarea creada exitosamente"}
 
-    return {"mensaje": "Tarea creada correctamente", "id": nuevo_id}
-
-
-@app.put("/tareas/{id}")
-def actualizar_tarea(id: int, tarea: Tarea):
+@app.put("/tareas/{tarea_id}")
+def actualizar_tarea(tarea_id: int, tarea: TareaBase):
     conn = crear_conexion()
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM tareas WHERE id = ?", (id,))
-    if cursor.fetchone() is None:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
-
     cursor.execute("""
-        UPDATE tareas
-        SET fecha = ?, centro = ?, habitaculo = ?, responsable = ?, estado = ?, comentarios = ?
-        WHERE id = ?""",
-        (tarea.fecha, tarea.centro, tarea.habitaculo, tarea.responsable, tarea.estado, tarea.comentarios, id)
-    )
+        UPDATE tareas SET fecha=?, centro=?, habitaculo=?, responsable=?, estado=?, comentarios=?
+        WHERE id=?
+    """, (tarea.fecha, tarea.centro, tarea.habitaculo, tarea.responsable, tarea.estado, tarea.comentarios, tarea_id))
     conn.commit()
     conn.close()
-    return {"mensaje": "Tarea actualizada correctamente"}
+    return {"mensaje": "Tarea actualizada"}
 
-
-@app.delete("/tareas/{id}")
-def eliminar_tarea(id: int):
+@app.delete("/tareas/{tarea_id}")
+def eliminar_tarea(tarea_id: int):
     conn = crear_conexion()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM tareas WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM tareas WHERE id = ?", (tarea_id,))
     conn.commit()
     conn.close()
-    return {"mensaje": "Tarea eliminada correctamente"}
-
-
-# Diccionario con claves de acceso para operarios
-CLAVES_OPERARIOS = {
-    "Candelaria": "43616041",
-    "Natalia": "54041797",
-    "Soledad": "45455315"
-}
-
-class Credenciales(BaseModel):
-    nombre: str
-    clave: str
+    return {"mensaje": "Tarea eliminada"}
 
 @app.post("/login_operario")
-def login_operario(credenciales: Credenciales):
-    if credenciales.nombre not in CLAVES_OPERARIOS or CLAVES_OPERARIOS[credenciales.nombre] != credenciales.clave:
+def login_operario(datos: dict):
+    nombre = datos.get("nombre")
+    clave = datos.get("clave")
+    claves_validas = {"Candelaria": "2024", "Natalia": "2024", "Soledad": "2024"}
+
+    if claves_validas.get(nombre) != clave:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     hoy = datetime.now().strftime("%Y-%m-%d")
     conn = crear_conexion()
     cursor = conn.cursor()
-    cursor.execute("""
-        SELECT * FROM tareas
-        WHERE responsable = ? AND fecha = ?""", (credenciales.nombre, hoy))
+    cursor.execute("SELECT * FROM tareas WHERE responsable = ? AND fecha = ?", (nombre, hoy))
+    filas = cursor.fetchall()
     columnas = [col[0] for col in cursor.description]
-    tareas = [dict(zip(columnas, fila)) for fila in cursor.fetchall()]
     conn.close()
-    return tareas
+
+    return [dict(zip(columnas, fila)) for fila in filas]
+
+@app.get("/informes")
+def filtrar_informes(desde: str, hasta: str, responsable: Optional[str] = None, estado: Optional[str] = None):
+    conn = crear_conexion()
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM tareas WHERE fecha BETWEEN ? AND ?"
+    params = [desde, hasta]
+
+    if responsable and responsable != "Todos":
+        query += " AND responsable = ?"
+        params.append(responsable)
+
+    if estado and estado != "Todos":
+        query += " AND estado = ?"
+        params.append(estado)
+
+    cursor.execute(query, params)
+    filas = cursor.fetchall()
+    columnas = [col[0] for col in cursor.description]
+    conn.close()
+
+    return [dict(zip(columnas, fila)) for fila in filas]
+
+@app.get("/exportar_excel_filtrado")
+def exportar_excel_filtrado(desde: str, hasta: str, responsable: Optional[str] = None, estado: Optional[str] = None):
+    from openpyxl import Workbook
+
+    datos = filtrar_informes(desde, hasta, responsable, estado)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Informe Filtrado"
+
+    if datos:
+        ws.append(list(datos[0].keys()))
+        for fila in datos:
+            ws.append(list(fila.values()))
+
+    archivo = "informe_filtrado.xlsx"
+    wb.save(archivo)
+    return FileResponse(archivo, filename=archivo, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
