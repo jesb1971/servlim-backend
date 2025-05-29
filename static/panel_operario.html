@@ -2,18 +2,26 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel del Operario</title>
+    <title>Panel de Informes</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 30px;
         }
-        #tareas {
-            margin-top: 20px;
+        h1 {
+            font-size: 26px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: inline-block;
+            margin-right: 10px;
         }
         table {
             border-collapse: collapse;
             width: 100%;
+            margin-top: 20px;
         }
         th, td {
             border: 1px solid #999;
@@ -21,149 +29,95 @@
             text-align: left;
         }
         th {
-            background-color: #ddd;
+            background-color: #eee;
         }
-        .modificado {
-            background-color: #d4edda !important;
-        }
-        .alvarez {
-            background-color: #f4a261;
-        }
-        .duggi {
-            background-color: #6fb1fc;
-        }
-        .ingenieros {
-            background-color: #d7b5f9;
-        }
-        #loginForm {
-            margin-bottom: 20px;
-        }
-        #guardarBtn[disabled] {
-            background-color: #ccc;
-            cursor: not-allowed;
+        button {
+            padding: 6px 12px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Panel del Operario</h1>
+    <h1>📊 Panel de Informes</h1>
 
-    <div id="loginForm">
-        <label>Nombre:
-            <select id="nombre">
-                <option value="">Seleccione...</option>
-                <option value="Candelaria">Candelaria</option>
-                <option value="Natalia">Natalia</option>
-                <option value="Soledad">Soledad</option>
+    <form id="filtroForm" onsubmit="filtrarTareas(event)">
+        <label>Desde: <input type="date" id="desde" required></label>
+        <label>Hasta: <input type="date" id="hasta" required></label>
+        <label>Responsable:
+            <select id="responsable">
+                <option value="">Todos</option>
+                <option>Candelaria</option>
+                <option>Natalia</option>
+                <option>Soledad</option>
             </select>
         </label>
-        <label>Clave:
-            <input type="password" id="clave">
+        <label>Estado:
+            <select id="estado">
+                <option value="">Todos</option>
+                <option>Pendiente</option>
+                <option>Completada</option>
+            </select>
         </label>
-        <button onclick="login()">Entrar</button>
-    </div>
+        <button type="submit">🔍 Filtrar</button>
+        <button type="button" onclick="descargarExcel()">📥 Descargar Excel</button>
+    </form>
 
-    <div id="tareas" style="display: none;"></div>
-    <button id="guardarBtn" onclick="guardarCambios()" style="display: none;" disabled>Guardar cambios</button>
+    <div id="resultado"></div>
 
     <script>
-        let tareasOperario = [];
+        async function filtrarTareas(event) {
+            event.preventDefault();
 
-        async function login() {
-            const nombre = document.getElementById("nombre").value;
-            const clave = document.getElementById("clave").value;
+            const desde = document.getElementById("desde").value;
+            const hasta = document.getElementById("hasta").value;
+            const responsable = document.getElementById("responsable").value;
+            const estado = document.getElementById("estado").value;
 
-            if (!nombre || !clave) {
-                alert("Por favor, completa nombre y clave.");
-                return;
-            }
+            const params = new URLSearchParams({ desde, hasta });
+            if (responsable) params.append("responsable", responsable);
+            if (estado) params.append("estado", estado);
 
-            const res = await fetch("/login_operario", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nombre, clave })
-            });
+            const res = await fetch(`/informes?${params.toString()}`);
+            const tareas = await res.json();
 
-            if (!res.ok) {
-                alert("❌ Credenciales inválidas");
-                return;
-            }
-
-            tareasOperario = await res.json();
-            document.getElementById("loginForm").style.display = "none";
-            mostrarTareas();
-        }
-
-        function mostrarTareas() {
-            if (tareasOperario.length === 0) {
-                document.getElementById("tareas").innerHTML = "<p>No tienes tareas asignadas para hoy.</p>";
-                document.getElementById("tareas").style.display = "block";
+            if (tareas.length === 0) {
+                document.getElementById("resultado").innerHTML = "<p>No hay tareas que coincidan con los filtros seleccionados.</p>";
                 return;
             }
 
             const tabla = `
-                <h2>Tareas de hoy</h2>
                 <table>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Centro</th>
-                        <th>Habitáculo</th>
-                        <th>Estado</th>
-                        <th>Comentarios</th>
+                        <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
+                        <th>Responsable</th><th>Estado</th><th>Comentarios</th>
                     </tr>
-                    ${tareasOperario.map((t, i) => `
-                        <tr id="fila-${i}" class="${asignarColor(t.centro)}">
+                    ${tareas.map(t => `
+                        <tr>
                             <td>${t.fecha}</td>
                             <td>${t.centro}</td>
                             <td>${t.habitaculo}</td>
-                            <td>
-                                <select id="estado-${i}" onchange="activarGuardar()">
-                                    <option value="Pendiente" ${t.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                                    <option value="Completada" ${t.estado === 'Completada' ? 'selected' : ''}>Completada</option>
-                                </select>
-                            </td>
-                            <td><input type="text" id="comentarios-${i}" value="${t.comentarios || ''}" oninput="activarGuardar()"></td>
+                            <td>${t.responsable}</td>
+                            <td>${t.estado}</td>
+                            <td>${t.comentarios}</td>
                         </tr>
                     `).join("")}
                 </table>
+                <p><strong>Total:</strong> ${tareas.length} tareas</p>
             `;
-            document.getElementById("tareas").innerHTML = tabla;
-            document.getElementById("tareas").style.display = "block";
-            document.getElementById("guardarBtn").style.display = "inline-block";
-            document.getElementById("guardarBtn").disabled = true;
+            document.getElementById("resultado").innerHTML = tabla;
         }
 
-        function asignarColor(centro) {
-            if (centro.includes("Álvarez")) return "alvarez";
-            if (centro.includes("Duggi")) return "duggi";
-            if (centro.includes("Ingenieros")) return "ingenieros";
-            return "";
-        }
+        function descargarExcel() {
+            const desde = document.getElementById("desde").value;
+            const hasta = document.getElementById("hasta").value;
+            const responsable = document.getElementById("responsable").value;
+            const estado = document.getElementById("estado").value;
 
-        function activarGuardar() {
-            document.getElementById("guardarBtn").disabled = false;
-        }
+            const params = new URLSearchParams({ desde, hasta });
+            if (responsable) params.append("responsable", responsable);
+            if (estado) params.append("estado", estado);
 
-        async function guardarCambios() {
-            for (let i = 0; i < tareasOperario.length; i++) {
-                const estado = document.getElementById(`estado-${i}`).value;
-                const comentarios = document.getElementById(`comentarios-${i}`).value;
-
-                const tareaActualizada = {
-                    ...tareasOperario[i],
-                    estado,
-                    comentarios
-                };
-
-                await fetch(`/tareas/${tareaActualizada.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(tareaActualizada)
-                });
-
-                document.getElementById(`fila-${i}`).classList.add("modificado");
-            }
-            document.getElementById("guardarBtn").disabled = true;
-            alert("✅ Cambios guardados correctamente.");
+            window.open(`/exportar_excel_filtrado?${params.toString()}`, "_blank");
         }
     </script>
 </body>
