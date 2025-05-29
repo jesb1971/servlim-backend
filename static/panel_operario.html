@@ -77,7 +77,8 @@
                 return;
             }
 
-            const res = await fetch("http://localhost:8000/login_operario", {
+            const res = await fetch("/login_operario", {
+, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ nombre, clave })
