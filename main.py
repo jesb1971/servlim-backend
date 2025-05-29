@@ -32,7 +32,7 @@ class Tarea(TareaBase):
 
 @app.get("/admin")
 def admin_panel():
-    return FileResponse("static/panel_admin.html")
+    return FileResponse("static/panel_administrador.html")
 
 @app.get("/operario")
 def operario_panel():
