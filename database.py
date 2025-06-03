@@ -1,8 +1,7 @@
 import os
 import sqlite3
 
-# Usar la ruta del disco persistente de Render
-DB_PATH = "/data/tareas_limpieza.db"
+DB_PATH = "/data/tareas_limpieza.db"  # Ruta persistente en Render
 
 def crear_conexion():
     conn = sqlite3.connect(DB_PATH)
