@@ -89,7 +89,11 @@ def eliminar_tarea(tarea_id: int):
 def login_operario(datos: dict):
     nombre = datos.get("nombre")
     clave = datos.get("clave")
-    claves_validas = {"Candelaria": "43616041", "Natalia": "54041797", "Soledad": "45455315"}
+    claves_validas = {
+        "Candelaria": "43616041",
+        "Natalia": "54041797",
+        "Soledad": "45455315"
+    }
 
     if claves_validas.get(nombre) != clave:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")

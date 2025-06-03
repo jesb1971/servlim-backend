@@ -78,7 +78,6 @@
             }
 
             const res = await fetch("/login_operario", {
-, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ nombre, clave })
@@ -155,7 +154,7 @@
                     comentarios
                 };
 
-               await fetch(`/tareas/${tareaActualizada.id}`, {
+                await fetch(`/tareas/${tareaActualizada.id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(tareaActualizada)
@@ -164,7 +163,7 @@
                 document.getElementById(`fila-${i}`).classList.add("modificado");
             }
             document.getElementById("guardarBtn").disabled = true;
-            alert("✅ Cambios guardados correctamente. ");
+            alert("✅ Cambios guardados correctamente.");
         }
     </script>
 </body>
