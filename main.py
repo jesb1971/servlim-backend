@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -29,6 +29,25 @@ class TareaBase(BaseModel):
 
 class Tarea(TareaBase):
     id: int
+
+# Health check para Render
+@app.get("/")
+def home():
+    return {"status": "ok"}
+
+# Favicon (opcional)
+@app.get("/favicon.ico")
+def favicon():
+    icon_path = os.path.join("static", "favicon.ico")
+    if os.path.exists(icon_path):
+        return FileResponse(icon_path)
+    else:
+        raise HTTPException(status_code=404, detail="Favicon no encontrado")
+
+# Soporte HEAD para todas las rutas
+@app.head("/{full_path:path}")
+async def head_handler(full_path: str, request: Request):
+    return {}
 
 @app.get("/admin")
 def admin_panel():
@@ -89,11 +108,7 @@ def eliminar_tarea(tarea_id: int):
 def login_operario(datos: dict):
     nombre = datos.get("nombre")
     clave = datos.get("clave")
-    claves_validas = {
-        "Candelaria": "43616041",
-        "Natalia": "54041797",
-        "Soledad": "45455315"
-    }
+    claves_validas = {"Candelaria": "43616041", "Natalia": "54041797", "Soledad": "45455315"}
 
     if claves_validas.get(nombre) != clave:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
