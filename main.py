@@ -4,10 +4,12 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-import sqlite3
 import os
 
-from database import crear_conexion
+from database import crear_conexion, inicializar_db
+
+# Inicializa la base de datos al arrancar
+inicializar_db()
 
 app = FastAPI()
 
@@ -30,12 +32,10 @@ class TareaBase(BaseModel):
 class Tarea(TareaBase):
     id: int
 
-# Health check para Render
 @app.get("/")
 def home():
     return {"status": "ok"}
 
-# Favicon (opcional)
 @app.get("/favicon.ico")
 def favicon():
     icon_path = os.path.join("static", "favicon.ico")
@@ -44,7 +44,6 @@ def favicon():
     else:
         raise HTTPException(status_code=404, detail="Favicon no encontrado")
 
-# Soporte HEAD para todas las rutas
 @app.head("/{full_path:path}")
 async def head_handler(full_path: str, request: Request):
     return {}
