@@ -1,2 +1,41 @@
+# Base de datos local (si se mantiene el modo archivo)
 tareas_limpieza.db
 
+# Entorno virtual y entornos Python
+venv/
+.env
+.env.*
+ENV/
+env/
+.venv/
+.venv*/
+env.bak/
+venv.bak/
+
+# Cachés de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos compilados / binarios 
+*.so
+*.dll
+*.exe
+
+# Archivos de especificación de PyInstaller u otros binarios
+*.spec
+*.manifest
+
+# Archivos de registro y temporales
+*.log
+*.tmp
+*.temp
+*.pid
+
+# Archivos temporales de Microsoft Office
+~$*
+
+# Archivos de distribución/paquetes
+dist/
+build/
+*.egg-info/
