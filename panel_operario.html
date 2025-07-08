@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel del Operario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        #tareas {
+            margin-top: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #999;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #ddd;
+        }
+        .modificado {
+            background-color: #d4edda !important;
+        }
+        .alvarez {
+            background-color: #f4a261;
+        }
+        .duggi {
+            background-color: #6fb1fc;
+        }
+        .ingenieros {
+            background-color: #d7b5f9;
+        }
+        #loginForm {
+            margin-bottom: 20px;
+        }
+        #guardarBtn[disabled] {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Panel del Operario</h1>
+
+    <div id="loginForm">
+        <label>Nombre:
+            <select id="nombre">
+                <option value="">Seleccione...</option>
+                <option value="Candelaria">Candelaria</option>
+                <option value="Natalia">Natalia</option>
+                <option value="Soledad">Soledad</option>
+            </select>
+        </label>
+        <label>Clave:
+            <input type="password" id="clave">
+        </label>
+        <button onclick="login()">Entrar</button>
+    </div>
+
+    <div id="tareas" style="display: none;"></div>
+    <button id="guardarBtn" onclick="guardarCambios()" style="display: none;" disabled>Guardar cambios</button>
+
+    <script>
+        let tareasOperario = [];
+
+        async function login() {
+            const nombre = document.getElementById("nombre").value;
+            const clave = document.getElementById("clave").value;
+
+            if (!nombre || !clave) {
+                alert("Por favor, completa nombre y clave.");
+                return;
+            }
+
+            const res = await fetch("http://localhost:8000/login_operario", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nombre, clave })
+            });
+
+            if (!res.ok) {
+                alert("❌ Credenciales inválidas");
+                return;
+            }
+
+            tareasOperario = await res.json();
+            document.getElementById("loginForm").style.display = "none";
+            mostrarTareas();
+        }
+
+        function mostrarTareas() {
+            if (tareasOperario.length === 0) {
+                document.getElementById("tareas").innerHTML = "<p>No tienes tareas asignadas para hoy.</p>";
+                document.getElementById("tareas").style.display = "block";
+                return;
+            }
+
+            const tabla = `
+                <h2>Tareas de hoy</h2>
+                <table>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Centro</th>
+                        <th>Habitáculo</th>
+                        <th>Estado</th>
+                        <th>Comentarios</th>
+                    </tr>
+                    ${tareasOperario.map((t, i) => `
+                        <tr id="fila-${i}" class="${asignarColor(t.centro)}">
+                            <td>${t.fecha}</td>
+                            <td>${t.centro}</td>
+                            <td>${t.habitaculo}</td>
+                            <td>
+                                <select id="estado-${i}" onchange="activarGuardar()">
+                                    <option value="Pendiente" ${t.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                                    <option value="Completada" ${t.estado === 'Completada' ? 'selected' : ''}>Completada</option>
+                                </select>
+                            </td>
+                            <td><input type="text" id="comentarios-${i}" value="${t.comentarios || ''}" oninput="activarGuardar()"></td>
+                        </tr>
+                    `).join("")}
+                </table>
+            `;
+            document.getElementById("tareas").innerHTML = tabla;
+            document.getElementById("tareas").style.display = "block";
+            document.getElementById("guardarBtn").style.display = "inline-block";
+            document.getElementById("guardarBtn").disabled = true;
+        }
+
+        function asignarColor(centro) {
+            if (centro.includes("Álvarez")) return "alvarez";
+            if (centro.includes("Duggi")) return "duggi";
+            if (centro.includes("Ingenieros")) return "ingenieros";
+            return "";
+        }
+
+        function activarGuardar() {
+            document.getElementById("guardarBtn").disabled = false;
+        }
+
+        async function guardarCambios() {
+            for (let i = 0; i < tareasOperario.length; i++) {
+                const estado = document.getElementById(`estado-${i}`).value;
+                const comentarios = document.getElementById(`comentarios-${i}`).value;
+
+                const tareaActualizada = {
+                    ...tareasOperario[i],
+                    estado,
+                    comentarios
+                };
+
+                await fetch(`http://localhost:8000/tareas/${tareaActualizada.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(tareaActualizada)
+                });
+
+                document.getElementById(`fila-${i}`).classList.add("modificado");
+            }
+            document.getElementById("guardarBtn").disabled = true;
+            alert("✅ Cambios guardados correctamente.");
+        }
+    </script>
+</body>
+</html>

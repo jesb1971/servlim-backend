@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Informes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        label {
+            margin-right: 10px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        select, input[type="date"] {
+            margin-right: 20px;
+            padding: 5px;
+        }
+        button {
+            padding: 6px 12px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+        .Alvarez {
+            background-color: #f4a261;
+        }
+        .Duggi {
+            background-color: #6fb1fc;
+        }
+        .Ingenieros {
+            background-color: #d7b5f9;
+        }
+        #mensajeVacio {
+            margin-top: 20px;
+            font-style: italic;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <h1>Panel de Informes</h1>
+
+    <label for="fechaInicio">Desde:</label>
+    <input type="date" id="fechaInicio">
+    <label for="fechaFin">Hasta:</label>
+    <input type="date" id="fechaFin">
+
+    <label for="responsable">Responsable:</label>
+    <select id="responsable">
+        <option value="">Todos</option>
+        <option value="Candelaria">Candelaria</option>
+        <option value="Natalia">Natalia</option>
+        <option value="Soledad">Soledad</option>
+    </select>
+
+    <label for="estado">Estado:</label>
+    <select id="estado">
+        <option value="">Todos</option>
+        <option value="Pendiente">Pendiente</option>
+        <option value="Completada">Completada</option>
+    </select>
+
+    <button onclick="filtrarInformes()">Filtrar</button>
+    <button onclick="exportarExcelFiltrado()">Exportar a Excel</button>
+
+    <div id="tablaInformes"></div>
+    <div id="mensajeVacio"></div>
+
+    <script>
+        async function filtrarInformes() {
+            const desde = document.getElementById("fechaInicio").value;
+            const hasta = document.getElementById("fechaFin").value;
+            const responsable = document.getElementById("responsable").value;
+            const estado = document.getElementById("estado").value;
+
+            if (!desde || !hasta) {
+                alert("Selecciona ambas fechas.");
+                return;
+            }
+
+            let url = `http://localhost:8000/informes?desde=${desde}&hasta=${hasta}`;
+            if (responsable) url += `&responsable=${responsable}`;
+            if (estado) url += `&estado=${estado}`;
+
+            const res = await fetch(url);
+            const datos = await res.json();
+
+            if (datos.length === 0) {
+                document.getElementById("tablaInformes").innerHTML = "";
+                document.getElementById("mensajeVacio").innerText = "No se encontraron tareas con los criterios seleccionados.";
+                return;
+            } else {
+                document.getElementById("mensajeVacio").innerText = "";
+            }
+
+            const tabla = `
+                <table>
+                    <tr>
+                        <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
+                        <th>Responsable</th><th>Estado</th><th>Comentarios</th>
+                    </tr>
+                    ${datos.map(d => `
+                        <tr class="${d.centro.includes('Álvarez') ? 'Alvarez' : d.centro}">
+                            <td>${d.fecha}</td>
+                            <td>${d.centro}</td>
+                            <td>${d.habitaculo}</td>
+                            <td>${d.responsable}</td>
+                            <td>${d.estado}</td>
+                            <td>${d.comentarios}</td>
+                        </tr>`).join("")}
+                </table>`;
+
+            document.getElementById("tablaInformes").innerHTML = tabla;
+        }
+
+        function exportarExcelFiltrado() {
+            const desde = document.getElementById("fechaInicio").value;
+            const hasta = document.getElementById("fechaFin").value;
+            const responsable = document.getElementById("responsable").value;
+            const estado = document.getElementById("estado").value;
+
+            if (!desde || !hasta) {
+                alert("Selecciona ambas fechas para exportar.");
+                return;
+            }
+
+            let url = `http://localhost:8000/exportar_excel_filtrado?desde=${desde}&hasta=${hasta}`;
+            if (responsable) url += `&responsable=${responsable}`;
+            if (estado) url += `&estado=${estado}`;
+
+            window.location.href = url;
+        }
+    </script>
+</body>
+</html>
