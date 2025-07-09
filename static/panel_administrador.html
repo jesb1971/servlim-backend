@@ -67,25 +67,13 @@
         button.eliminar:hover {
             background-color: #c0392b;
         }
-        #mostrarBtn {
-            padding: 6px 12px;
-            margin-bottom: 10px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        #mostrarBtn:hover {
-            background-color: #2980b9;
-        }
     </style>
 </head>
 <body>
     <h1>Panel del Administrador</h1>
 
     <h2>📂 Ver todas las tareas</h2>
-    <button id="mostrarBtn" onclick="verTareas()">Mostrar</button>
+    <button onclick="verTareas()">Mostrar</button>
     <div id="tareas"></div>
 
     <h2>➕ Crear nueva tarea</h2>
@@ -130,7 +118,7 @@
         const HABITACULOS = {
             "Álvarez de Lugo": ["Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6", "Aula 7", "Aula 8", "Despacho Jorge", "Recepción", "Despacho Edu y Naza", "Contabilidad", "Despacho Ñeña y Espi", "Torre", "Despacho Pilar y Begoña", "Cocina", "Baños", "Almacenes", "Pasillos", "Sala limpieza", "Papeleras", "Escaleras/Entrada", "Salida Emergencia", "Despacho Jorge"],
             "Duggi": ["Aula 1", "Aula 2", "Aula 3", "Despacho", "Recepción", "Baño Disc.", "Baños", "Pasillo"],
-            "Ingenieros": ["Entrada", "Aula 1 (salón peluquería)", "Aula 2 (aula de informática)", "Despacho 1", "Despacho 2 (pequeño)", "Aula 3 (aula de teoría peluquería)", "Aula 4 (salón estético)", "Aula 5 (aula de teoría estética)", "Aula 6 (almacén)"]
+            "Ingenieros": ["Entrada", "Aula 1 (salón peluquería)", "Aula 2 (aula de informática)", "Despacho 1", "Despacho 2 (pequeño)", "Aula 3 (aula de teoría peluquería)", "Aula 4 (salón estético)", "Aula 5 (aula de teoría estética)", "Aula 6 (almacén)","Recepción","Papeleras","Pasillos"]
         };
 
         function actualizarHabitaculos() {
@@ -147,7 +135,7 @@
         }
 
         async function verTareas() {
-            const res = await fetch("/tareas");
+            const res = await fetch("http://localhost:8000/tareas");
             const datos = await res.json();
             const tabla = `
                 <table>
@@ -176,7 +164,8 @@
 
             for (const habitaculo of habitaculos) {
                 const nuevaTarea = { fecha, centro, habitaculo, responsable, estado, comentarios };
-                const res = await fetch("/tareas", {
+
+                const res = await fetch("http://localhost:8000/tareas", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(nuevaTarea)
@@ -195,7 +184,7 @@
 
         async function eliminarTarea(id) {
             if (!confirm("¿Estás seguro de que quieres eliminar esta tarea?")) return;
-            const res = await fetch(`/tareas/${id}`, { method: "DELETE" });
+            const res = await fetch(`http://localhost:8000/tareas/${id}`, { method: "DELETE" });
             if (res.ok) {
                 alert("🗑️ Tarea eliminada.");
                 verTareas();
