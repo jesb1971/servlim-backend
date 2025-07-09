@@ -195,3 +195,10 @@ def exportar_excel(
         filename=archivo_export,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+from fastapi.responses import FileResponse
+
+@app.get("/admin")
+def mostrar_panel_administrador():
+    return FileResponse("panel_administrador.html")
+
