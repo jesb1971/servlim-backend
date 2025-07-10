@@ -35,7 +35,7 @@
         }
         #formulario {
             margin-top: 40px;
-            max-width: 500px;
+            max-width: 600px;
             padding: 20px;
             border: 1px solid #ccc;
             border-radius: 10px;
@@ -49,7 +49,8 @@
         }
         #formulario input,
         #formulario select,
-        #formulario button {
+        #formulario button,
+        #formulario textarea {
             width: 100%;
             padding: 8px;
             margin-top: 5px;
@@ -84,13 +85,7 @@
 <body>
     <h1>Panel del Administrador</h1>
 
-    <h2>📂 Ver tareas</h2>
-    <label>Filtrar:
-        <select id="filtro" onchange="verTareas()">
-            <option value="hoy">Solo hoy</option>
-            <option value="todas">Todas</option>
-        </select>
-    </label>
+    <h2>📂 Ver tareas del día</h2>
     <button id="mostrarBtn" onclick="verTareas()">Mostrar</button>
     <div id="tareas"></div>
 
@@ -125,8 +120,8 @@
                     <option value="Completada">Completada</option>
                 </select>
             </label>
-            <label>Comentarios:
-                <input type="text" id="comentarios">
+            <label>Comentarios por habitáculo (separados por coma, en el mismo orden):
+                <textarea id="comentarios" placeholder="Ej: comentario 1, comentario 2, comentario 3"></textarea>
             </label>
             <button type="submit">Crear</button>
         </form>
@@ -134,7 +129,7 @@
 
     <script>
         const HABITACULOS = {
-            "Álvarez de Lugo": ["Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6", "Aula 7", "Aula 8", "Despacho Jorge", "Recepción", "Despacho Edu y Naza", "Contabilidad", "Despacho Ñeña y Espi", "Torre", "Despacho Pilar y Begoña", "Cocina", "Baños", "Almacenes", "Pasillos", "Sala limpieza", "Papeleras", "Escaleras/Entrada", "Salida Emergencia", "Despacho Jorge"],
+            "Álvarez de Lugo": ["Aula 1", "Aula 2", "Aula 3", "Aula 4", "Aula 5", "Aula 6", "Aula 7", "Aula 8", "Despacho Jorge", "Recepción", "Despacho Edu y Naza", "Contabilidad", "Despacho Ñeña y Espi", "Torre", "Despacho Pilar y Begoña", "Cocina", "Baños", "Almacenes", "Pasillos", "Sala limpieza", "Papeleras", "Escaleras/Entrada", "Salida Emergencia"],
             "Duggi": ["Aula 1", "Aula 2", "Aula 3", "Despacho", "Recepción", "Baño Disc.", "Baños", "Pasillo"],
             "Ingenieros": ["Entrada", "Aula 1 (salón peluquería)", "Aula 2 (aula de informática)", "Despacho 1", "Despacho 2 (pequeño)", "Aula 3 (aula de teoría peluquería)", "Aula 4 (salón estético)", "Aula 5 (aula de teoría estética)", "Aula 6 (almacén)", "Recepción", "Papeleras", "Pasillos", "Baños", "Baños Disc."]
         };
@@ -153,22 +148,17 @@
         }
 
         async function verTareas() {
-            const filtro = document.getElementById("filtro").value;
+            const hoy = new Date().toISOString().slice(0, 10);
             const res = await fetch("/tareas");
             const datos = await res.json();
-            const hoy = new Date().toISOString().split("T")[0];
-
-            const filtradas = filtro === "hoy"
-                ? datos.filter(t => t.fecha === hoy)
-                : datos;
-
+            const tareasHoy = datos.filter(t => t.fecha === hoy);
             const tabla = `
                 <table>
                     <tr>
                         <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
                         <th>Responsable</th><th>Estado</th><th>Comentarios</th><th>Acciones</th>
                     </tr>
-                    ${filtradas.map(t => `
+                    ${tareasHoy.map(t => `
                         <tr class="${t.centro.includes('Álvarez') ? 'Alvarez' : t.centro}">
                             <td>${t.fecha}</td><td>${t.centro}</td><td>${t.habitaculo}</td>
                             <td>${t.responsable}</td><td>${t.estado}</td><td>${t.comentarios}</td>
@@ -185,10 +175,16 @@
             const habitaculos = Array.from(document.getElementById("habitaculo").selectedOptions).map(opt => opt.value);
             const responsable = document.getElementById("responsable").value;
             const estado = document.getElementById("estado").value;
-            const comentarios = document.getElementById("comentarios").value;
+            const comentarios = document.getElementById("comentarios").value.split(",").map(c => c.trim());
 
-            for (const habitaculo of habitaculos) {
-                const nuevaTarea = { fecha, centro, habitaculo, responsable, estado, comentarios };
+            if (comentarios.length !== 1 && comentarios.length !== habitaculos.length) {
+                alert("Debe introducir un solo comentario o uno por cada habitáculo, separados por coma.");
+                return;
+            }
+
+            for (let i = 0; i < habitaculos.length; i++) {
+                const comentario = comentarios.length === 1 ? comentarios[0] : comentarios[i];
+                const nuevaTarea = { fecha, centro, habitaculo: habitaculos[i], responsable, estado, comentarios: comentario };
                 const res = await fetch("/tareas", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
