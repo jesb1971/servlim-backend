@@ -84,7 +84,13 @@
 <body>
     <h1>Panel del Administrador</h1>
 
-    <h2>📂 Ver todas las tareas</h2>
+    <h2>📂 Ver tareas</h2>
+    <label>Filtrar:
+        <select id="filtro" onchange="verTareas()">
+            <option value="hoy">Solo hoy</option>
+            <option value="todas">Todas</option>
+        </select>
+    </label>
     <button id="mostrarBtn" onclick="verTareas()">Mostrar</button>
     <div id="tareas"></div>
 
@@ -147,16 +153,22 @@
         }
 
         async function verTareas() {
-            const hoy = new Date().toISOString().split("T")[0];
-            const res = await fetch(`/informes?desde=${hoy}&hasta=${hoy}`);
+            const filtro = document.getElementById("filtro").value;
+            const res = await fetch("/tareas");
             const datos = await res.json();
+            const hoy = new Date().toISOString().split("T")[0];
+
+            const filtradas = filtro === "hoy"
+                ? datos.filter(t => t.fecha === hoy)
+                : datos;
+
             const tabla = `
                 <table>
                     <tr>
                         <th>Fecha</th><th>Centro</th><th>Habitáculo</th>
                         <th>Responsable</th><th>Estado</th><th>Comentarios</th><th>Acciones</th>
                     </tr>
-                    ${datos.map(t => `
+                    ${filtradas.map(t => `
                         <tr class="${t.centro.includes('Álvarez') ? 'Alvarez' : t.centro}">
                             <td>${t.fecha}</td><td>${t.centro}</td><td>${t.habitaculo}</td>
                             <td>${t.responsable}</td><td>${t.estado}</td><td>${t.comentarios}</td>
